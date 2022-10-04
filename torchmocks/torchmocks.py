@@ -36,7 +36,7 @@ class Conv2dMock:
         return torch.zeros((batch_size, self.out_channels, out_height, out_width))
 
 
-class BatchNormMock:
+class Norm2dMock:
     def __init__(self, batch_norm):
         self.__class__ = type(
             batch_norm.__class__.__name__, (self.__class__, batch_norm.__class__), {}
@@ -107,6 +107,19 @@ class Pool2dMock:
         return torch.zeros((batch_size, in_channels, out_height, out_width))
 
 
+class EmbeddingMock:
+    def __init__(self, obj):
+        self.__class__ = type(
+            obj.__class__.__name__, (self.__class__, obj.__class__), {}
+        )
+        self.__dict__ = obj.__dict__
+        self.embedding_dim = obj.embedding_dim
+
+    def forward(self, x):
+        new_shape = tuple(list(x.shape) + [self.embedding_dim])
+        return torch.zeros(new_shape)
+
+
 def tupleize(d):
     if isinstance(d, int):
         return (d, d)
@@ -118,13 +131,14 @@ def tupleize(d):
 
 mock_dict = {
     torch.nn.Conv2d: Conv2dMock,
-    torch.nn.BatchNorm2d: BatchNormMock,
+    torch.nn.BatchNorm2d: Norm2dMock,
     torch.nn.Linear: LinearMock,
     torch.nn.MaxPool2d: Pool2dMock,
     torch.nn.AvgPool2d: Pool2dMock,
+    torch.nn.Embedding: EmbeddingMock,
 }
 
-activations = [
+no_shape_change = [
     torch.nn.ReLU,
     torch.nn.ELU,
     torch.nn.LeakyReLU,
@@ -135,9 +149,15 @@ activations = [
     torch.nn.Softmax,
     torch.nn.Softmin,
     torch.nn.Softmax2d,
+    torch.nn.SiLU,
+    torch.nn.Dropout,
+    torch.nn.Dropout2d,
+    torch.nn.Dropout3d,
+    torch.nn.LayerNorm,
+    torch.nn.GroupNorm,
 ]
 
-for activation in activations:
+for activation in no_shape_change:
     mock_dict[activation] = ActivationMock
 
 
