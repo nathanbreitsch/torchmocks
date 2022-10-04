@@ -1,7 +1,7 @@
 import torch
 
 
-class MockConv2d:
+class Conv2dMock:
     def __init__(self, conv2d):
         self.__class__ = type(
             conv2d.__class__.__name__, (self.__class__, conv2d.__class__), {}
@@ -36,7 +36,7 @@ class MockConv2d:
         return torch.zeros((batch_size, self.out_channels, out_height, out_width))
 
 
-class MockBatchNorm:
+class BatchNormMock:
     def __init__(self, batch_norm):
         self.__class__ = type(
             batch_norm.__class__.__name__, (self.__class__, batch_norm.__class__), {}
@@ -50,7 +50,7 @@ class MockBatchNorm:
         return x
 
 
-class MockLinear:
+class LinearMock:
     def __init__(self, linear):
         self.__class__ = type(
             linear.__class__.__name__, (self.__class__, linear.__class__), {}
@@ -66,7 +66,7 @@ class MockLinear:
         return torch.zeros(new_shape)
 
 
-class MockActivation:
+class ActivationMock:
     def __init__(self, activation):
         self.__class__ = type(
             activation.__class__.__name__, (self.__class__, activation.__class__), {}
@@ -77,7 +77,7 @@ class MockActivation:
         return x
 
 
-class MaxPool2dMock:
+class Pool2dMock:
     def __init__(self, obj):
         self.__class__ = type(
             obj.__class__.__name__, (self.__class__, obj.__class__), {}
@@ -117,12 +117,28 @@ def tupleize(d):
 
 
 mock_dict = {
-    torch.nn.Conv2d: MockConv2d,
-    torch.nn.BatchNorm2d: MockBatchNorm,
-    torch.nn.ReLU: MockActivation,
-    torch.nn.Linear: MockLinear,
-    torch.nn.MaxPool2d: MaxPool2dMock,
+    torch.nn.Conv2d: Conv2dMock,
+    torch.nn.BatchNorm2d: BatchNormMock,
+    torch.nn.Linear: LinearMock,
+    torch.nn.MaxPool2d: Pool2dMock,
+    torch.nn.AvgPool2d: Pool2dMock,
 }
+
+activations = [
+    torch.nn.ReLU,
+    torch.nn.ELU,
+    torch.nn.LeakyReLU,
+    torch.nn.GELU,
+    torch.nn.Tanh,
+    torch.nn.Sigmoid,
+    torch.nn.Mish,
+    torch.nn.Softmax,
+    torch.nn.Softmin,
+    torch.nn.Softmax2d,
+]
+
+for activation in activations:
+    mock_dict[activation] = ActivationMock
 
 
 def mock_recursive(torch_module):
