@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "torchmocks"
-version = "0.0.1"
+version = "0.0.2"
 description = "Mocks pytorch modules so that test run faster"
 readme = "README.md"
 requires-python = ">=3.7"
