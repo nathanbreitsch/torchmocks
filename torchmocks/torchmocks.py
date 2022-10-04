@@ -129,7 +129,7 @@ def tupleize(d):
         raise ValueError
 
 
-mock_dict = {
+builtin_mocks = {
     torch.nn.Conv2d: Conv2dMock,
     torch.nn.BatchNorm2d: Norm2dMock,
     torch.nn.Linear: LinearMock,
@@ -158,23 +158,24 @@ no_shape_change = [
 ]
 
 for activation in no_shape_change:
-    mock_dict[activation] = ActivationMock
+    builtin_mocks[activation] = ActivationMock
 
 
-def mock_recursive(torch_module):
+def mock_recursive(torch_module, extra_mocks):
+    mock_dict = {**builtin_mocks, **extra_mocks}
     unimplemented_modules = set()
     for key, submodule in torch_module._modules.items():
         if submodule.__class__ in mock_dict:
             torch_module._modules[key] = mock_dict[submodule.__class__](submodule)
         elif len(submodule._modules) > 0:
-            unimplemented_modules.update(mock_recursive(submodule))
+            unimplemented_modules.update(mock_recursive(submodule, extra_mocks))
         else:
             unimplemented_modules.add(submodule.__class__)
     return unimplemented_modules
 
 
-def mock(torch_module, debug=False):
-    unimplemented_modules = mock_recursive(torch_module)
+def mock(torch_module, debug=False, extra_mocks={}):
+    unimplemented_modules = mock_recursive(torch_module, extra_mocks)
     if debug:
         print()
         for module in unimplemented_modules:

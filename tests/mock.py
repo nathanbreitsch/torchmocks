@@ -1,6 +1,7 @@
 import time
 
 import torch
+import vit_pytorch
 from vit_pytorch import ViT
 from vit_pytorch.max_vit import MaxViT
 from torchmocks import mock
@@ -80,7 +81,9 @@ def test_mock_MaxViT():
         dropout=0.1,
     )
 
-    mock(net, debug=True)
+    from torchmocks.torchmocks import ActivationMock
+
+    mock(net, debug=True, extra_mocks={vit_pytorch.max_vit.Dropsample: ActivationMock})
     image_batch = torch.zeros(4, 3, 224, 224)
     start = time.time()
     output = net(image_batch)
