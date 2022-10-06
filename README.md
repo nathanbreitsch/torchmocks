@@ -7,6 +7,11 @@ The computational overhead of neural networks discourages thorough testing durin
 ## Solution
 Torchmocks replaces common building blocks (such as torch.nn.Conv2d) with replicas that only keep track of tensor shapes and device location.  This is often the only information that we need to check to ensure proper function of pytorch code.
 
+## Install
+```
+pip install torchmocks
+```
+
 ## Example
 ```python
 import torch
@@ -23,4 +28,6 @@ def test_mock_resnet():
 ```
 
 ## Status
-This is a work in progress and only a handful of torch modules have been mocked. Modules that have not been mocked will run their normal computation during the forward and backward pass.
+This is a work in progress and only a handful of torch modules have been mocked. Modules that have not been mocked will run their normal computation during the forward pass.
+Autograd does not work yet, so any training code will fail.  Fixing this is my top priority.
+I'm also exploring other ways to do shape inference in order to mock operations that don't appear in the module tree. Let me know if you have any ideas.
