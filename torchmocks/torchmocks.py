@@ -14,6 +14,7 @@ class Conv2dMock:
         self.padding = conv2d.padding
         self.dilation = conv2d.dilation
         self.device = conv2d.weight.device
+        self.mock_gradient_sink = torch.ones(1, requires_grad=True)
 
     def forward(self, x):
         batch_size, in_channels, in_height, in_width = x.shape
@@ -33,7 +34,10 @@ class Conv2dMock:
             - 1
             + self.stride[1]
         ) // self.stride[1]
-        return torch.zeros((batch_size, self.out_channels, out_height, out_width))
+
+        return self.mock_gradient_sink * torch.zeros(
+            (batch_size, self.out_channels, out_height, out_width)
+        )
 
 
 class Norm2dMock:
@@ -58,12 +62,12 @@ class LinearMock:
         self.__dict__ = linear.__dict__
         self.in_features = linear.in_features
         self.out_features = linear.out_features
+        self.mock_gradient_sink = torch.ones(1, requires_grad=True)
 
     def forward(self, x):
         assert x.shape[-1] == self.in_features
-        new_shape = list(x.shape)
-        new_shape[-1] = self.out_features
-        return torch.zeros(new_shape)
+        new_shape = (*x.shape[:-1], self.out_features)
+        return self.mock_gradient_sink * torch.zeros(new_shape)
 
 
 class ActivationMock:
@@ -87,6 +91,7 @@ class Pool2dMock:
         self.stride = tupleize(obj.stride)
         self.padding = tupleize(obj.padding)
         self.dilation = tupleize(obj.dilation)
+        self.mock_gradient_sink = torch.ones(1, requires_grad=True)
 
     def forward(self, x):
         batch_size, in_channels, in_height, in_width = x.shape
@@ -104,7 +109,9 @@ class Pool2dMock:
             - 1
             + self.stride[1]
         ) // self.stride[1]
-        return torch.zeros((batch_size, in_channels, out_height, out_width))
+        return self.mock_gradient_sink * torch.zeros(
+            (batch_size, in_channels, out_height, out_width)
+        )
 
 
 class EmbeddingMock:
@@ -114,10 +121,11 @@ class EmbeddingMock:
         )
         self.__dict__ = obj.__dict__
         self.embedding_dim = obj.embedding_dim
+        self.mock_gradient_sink = torch.ones(1, requires_grad=True)
 
     def forward(self, x):
         new_shape = tuple(list(x.shape) + [self.embedding_dim])
-        return torch.zeros(new_shape)
+        return self.mock_gradient_sink * torch.zeros(new_shape)
 
 
 def tupleize(d):
