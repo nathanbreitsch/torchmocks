@@ -29,5 +29,4 @@ def test_mock_resnet():
 
 ## Status
 This is a work in progress and only a handful of torch modules have been mocked. Modules that have not been mocked will run their normal computation during the forward pass.
-Autograd does not work yet, so any training code will fail.  Fixing this is my top priority.
 I'm also exploring other ways to do shape inference in order to mock operations that don't appear in the module tree. Let me know if you have any ideas.
