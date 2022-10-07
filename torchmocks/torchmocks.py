@@ -70,6 +70,56 @@ class LinearMock:
         return self.mock_gradient_sink * torch.zeros(new_shape)
 
 
+# It may be desireable to simulate backprop instead
+# of using "gradient sink" hack.
+# pros:
+#   - exercises non-mocked custom module backprop code
+#   - and custom hooks
+#   - and custom optimizers
+# cons:
+#   - more complicated mocks
+#   - might require more computation and memory
+class MockLinearFunction(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx, input, weight, bias=None):
+        ctx.save_for_backward(input, weight, bias)
+        out_features, in_features = weight.shape
+        assert input.shape[-1] == in_features
+        output_shape = (*input.shape[:-1], out_features)
+        output = torch.zeros(output_shape, requires_grad=True)
+        return output
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        input, weight, bias = ctx.saved_tensors
+        grad_input = grad_weight = grad_bias = None
+
+        if ctx.needs_input_grad[0]:
+            grad_input = torch.zeros(input.shape, requires_grad=True)
+        if ctx.needs_input_grad[1]:
+            grad_weight = torch.zeros(weight.shape, requires_grad=True)
+        if bias is not None and ctx.needs_input_grad[2]:
+            grad_bias = torch.zeros(bias.shape, requires_grad=True)
+        return grad_input, grad_weight, grad_bias
+
+
+class LinearModuleMock(torch.nn.Module):
+    def __init__(self, linear):
+        super().__init__()
+        self.input_features = linear.in_features
+        self.output_features = linear.out_features
+        self.weight = torch.nn.Parameter(
+            torch.zeros((self.output_features, self.input_features))
+        )
+        if linear.bias is not None:
+            self.bias = torch.nn.Parameter(torch.zeros((self.output_features)))
+        else:
+            self.register_parameter("bias", None)
+
+    def forward(self, input):
+        return MockLinearFunction.apply(input, self.weight, self.bias)
+
+
 class ActivationMock:
     def __init__(self, activation):
         self.__class__ = type(
@@ -140,7 +190,7 @@ def tupleize(d):
 builtin_mocks = {
     torch.nn.Conv2d: Conv2dMock,
     torch.nn.BatchNorm2d: Norm2dMock,
-    torch.nn.Linear: LinearMock,
+    torch.nn.Linear: LinearModuleMock,
     torch.nn.MaxPool2d: Pool2dMock,
     torch.nn.AvgPool2d: Pool2dMock,
     torch.nn.Embedding: EmbeddingMock,
