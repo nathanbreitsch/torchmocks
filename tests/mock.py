@@ -60,35 +60,3 @@ def test_mock_ViT():
     print(elapsed)
     assert elapsed < 0.25
     assert output.shape == (4, 1000)
-
-
-def test_mock_MaxViT():
-
-    net = MaxViT(
-        num_classes=1000,
-        dim_conv_stem=64,
-        dim=96,
-        dim_head=32,
-        depth=(
-            2,
-            2,
-            5,
-            2,
-        ),
-        window_size=7,
-        mbconv_expansion_rate=4,
-        mbconv_shrinkage_rate=0.25,
-        dropout=0.1,
-    )
-
-    from torchmocks.torchmocks import ActivationMock
-
-    mock(net, debug=True, extra_mocks={vit_pytorch.max_vit.Dropsample: ActivationMock})
-    image_batch = torch.zeros(4, 3, 224, 224)
-    start = time.time()
-    output = net(image_batch)
-    end = time.time()
-    elapsed = end - start
-    print(elapsed)
-    assert elapsed < 0.25
-    assert output.shape == (4, 1000)
