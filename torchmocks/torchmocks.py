@@ -1,5 +1,7 @@
 import torch
 
+from .nn import activation
+
 
 class Conv2dMock:
     def __init__(self, conv2d):
@@ -120,17 +122,6 @@ class LinearModuleMock(torch.nn.Module):
         return MockLinearFunction.apply(input, self.weight, self.bias)
 
 
-class ActivationMock:
-    def __init__(self, activation):
-        self.__class__ = type(
-            activation.__class__.__name__, (self.__class__, activation.__class__), {}
-        )
-        self.__dict__ = activation.__dict__
-
-    def forward(self, x):
-        return x
-
-
 class Pool2dMock:
     def __init__(self, obj):
         self.__class__ = type(
@@ -194,29 +185,8 @@ builtin_mocks = {
     torch.nn.MaxPool2d: Pool2dMock,
     torch.nn.AvgPool2d: Pool2dMock,
     torch.nn.Embedding: EmbeddingMock,
+    **activation.mock_dict,
 }
-
-no_shape_change = [
-    torch.nn.ReLU,
-    torch.nn.ELU,
-    torch.nn.LeakyReLU,
-    torch.nn.GELU,
-    torch.nn.Tanh,
-    torch.nn.Sigmoid,
-    torch.nn.Mish,
-    torch.nn.Softmax,
-    torch.nn.Softmin,
-    torch.nn.Softmax2d,
-    torch.nn.SiLU,
-    torch.nn.Dropout,
-    torch.nn.Dropout2d,
-    torch.nn.Dropout3d,
-    torch.nn.LayerNorm,
-    torch.nn.GroupNorm,
-]
-
-for activation in no_shape_change:
-    builtin_mocks[activation] = ActivationMock
 
 
 def mock_recursive(torch_module, extra_mocks):
