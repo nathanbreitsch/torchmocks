@@ -27,6 +27,21 @@ def test_mock_resnet():
 
 ```
 
+## Pytorch Lightning Users
+You can exercise most of your training code with torchmocks and the run_fast_dev option for Trainer.
+See full example [here](https://github.com/nathanbreitsch/torchmocks/blob/main/tests/lightning_train.py).
+
+```python
+def test_training():
+    dataset = MockDataset()
+    train_loader = torch.utils.data.DataLoader(dataset, batch_size=3)
+    val_loader = torch.utils.data.DataLoader(dataset, batch_size=3)
+    model = ExamplePytorchLightningModule()
+    mock(model, debug=True)
+    trainer = pytorch_lightning.Trainer(fast_dev_run=2)
+    trainer.fit(model, train_loader, val_loader)
+```
+
 ## Status
 This is a work in progress and only a handful of torch modules have been mocked. Modules that have not been mocked will run their normal computation during the forward pass.
 I'm also exploring other ways to do shape inference in order to mock operations that don't appear in the module tree. Let me know if you have any ideas.
