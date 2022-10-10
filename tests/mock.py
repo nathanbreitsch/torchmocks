@@ -3,7 +3,6 @@ import time
 import torch
 import vit_pytorch
 from vit_pytorch import ViT
-from vit_pytorch.max_vit import MaxViT
 from torchmocks import mock
 from torchvision.models import resnet152
 
@@ -20,22 +19,12 @@ def test_mock_resnet():
     assert output.shape == (4, 1000)
 
 
-v = MaxViT(
-    num_classes=1000,
-    dim_conv_stem=64,  # dimension of the convolutional stem, would default to dimension of first layer if not specified
-    dim=96,  # dimension of first layer, doubles every layer
-    dim_head=32,  # dimension of attention heads, kept at 32 in paper
-    depth=(
-        2,
-        2,
-        5,
-        2,
-    ),  # number of MaxViT blocks per stage, which consists of MBConv, block-like attention, grid-like attention
-    window_size=7,  # window size for block and grids
-    mbconv_expansion_rate=4,  # expansion rate of MBConv
-    mbconv_shrinkage_rate=0.25,  # shrinkage rate of squeeze-excitation in MBConv
-    dropout=0.1,  # dropout
-)
+def test_mock_transformer():
+    net = torch.nn.Transformer(nhead=16, num_encoder_layers=12)
+    mock(net, debug=True)
+    src = torch.rand((10, 32, 512))
+    tgt = torch.rand((20, 32, 512))
+    out = net(src, tgt)
 
 
 def test_mock_ViT():
