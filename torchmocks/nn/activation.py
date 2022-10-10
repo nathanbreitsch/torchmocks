@@ -34,7 +34,6 @@ activations = [
     torch.nn.modules.activation.LogSigmoid,
     torch.nn.modules.activation.Softplus,
     torch.nn.modules.activation.Softshrink,
-    torch.nn.modules.activation.MultiheadAttention,
     torch.nn.modules.activation.PReLU,
     torch.nn.modules.activation.Softsign,
     torch.nn.modules.activation.Tanhshrink,
@@ -42,6 +41,8 @@ activations = [
     torch.nn.modules.activation.Softmax,
     torch.nn.modules.activation.Softmax2d,
     torch.nn.modules.activation.LogSoftmax,
+    # why is this considered activation?
+    # torch.nn.modules.activation.MultiheadAttention,
 ]
 
 mock_dict = {a: ActivationMock for a in activations}
