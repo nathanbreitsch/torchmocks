@@ -4,24 +4,31 @@ import torch
 class MockLinearFunction(torch.autograd.Function):
     @staticmethod
     def forward(ctx, x, weight, bias=None):
-        ctx.save_for_backward(x, weight, bias)
+        ctx.save_for_backward(
+            torch.IntTensor(tuple(x.shape)),
+            torch.IntTensor(tuple(weight.shape)),
+            torch.IntTensor(tuple(bias.shape)) if bias is not None else None,
+        )
         out_features, in_features = weight.shape
         assert x.shape[-1] == in_features
         output_shape = (*x.shape[:-1], out_features)
-        output = torch.zeros(output_shape, requires_grad=True)
+        output = torch.zeros(output_shape)
         return output
 
     @staticmethod
     def backward(ctx, grad_output):
-        x, weight, bias = ctx.saved_tensors
-        grad_input = grad_weight = grad_bias = None
+        x_shape, weight_shape, bias_shape = ctx.saved_tensors
+        x_shape = tuple(x_shape.tolist())
+        weight_shape = tuple(weight_shape.tolist())
+        bias_shape = tuple(bias_shape.tolist()) if bias_shape is not None else None
 
+        grad_input = grad_weight = grad_bias = None
         if ctx.needs_input_grad[0]:
-            grad_input = torch.zeros(x.shape, requires_grad=True)
+            grad_input = torch.zeros(x_shape)
         if ctx.needs_input_grad[1]:
-            grad_weight = torch.zeros(weight.shape, requires_grad=True)
-        if bias is not None and ctx.needs_input_grad[2]:
-            grad_bias = torch.zeros(bias.shape, requires_grad=True)
+            grad_weight = torch.zeros(weight_shape)
+        if bias_shape is not None and ctx.needs_input_grad[2]:
+            grad_bias = torch.zeros(bias_shape)
         return grad_input, grad_weight, grad_bias
 
 
