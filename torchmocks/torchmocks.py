@@ -1,4 +1,5 @@
 import torch
+import torch.fx
 
 from .nn import activation, normalization, linear, conv, pooling, embedding, dropout
 
@@ -12,6 +13,26 @@ builtin_mocks = {
     **normalization.mock_dict,
     **activation.mock_dict,
 }
+
+
+def mock_with_fx_graph_manipulation(torch_module, extra_mocks={}):
+    # We can use torch.fx to symbolicaly trace the execution
+    #   graph allowing us to replace pure functions
+    #   unfortunately, trace can fail, e.g. when __len__ is used
+    #   more work is needed to make this approach reliable
+    mock_dict = {**builtin_mocks, **extra_mocks}
+    graph = torch.fx.Tracer().trace(torch_module)
+    for node in graph.nodes:
+        if node.op == "call_module":
+            target_module = model.get_submodule(node.target)
+            if mock_dict.get(target_module.__class__) is not None:
+                node.target = mock_dict[target_module.__class__](target_module)
+        elif node.op == "call_function":
+            if mock_dict.get(node.target) is not None:
+                node.target = mock_dict[node.target]
+
+    graph.lint()
+    return torch.fx.GraphModule(torch_module, graph)
 
 
 def mock_recursive(torch_module, extra_mocks):

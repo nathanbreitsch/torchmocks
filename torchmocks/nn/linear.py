@@ -48,9 +48,14 @@ class LinearModuleMock:
         return MockLinearFunction.apply(x, self.weight, self.bias)
 
 
+def pure_linear_mock(x, weight, bias):
+    return MockLinearFunction.apply(x, weight, bias)
+
+
 mock_dict = {
     torch.nn.modules.linear.Identity: None,
     torch.nn.modules.linear.Linear: LinearModuleMock,
+    torch.nn.functional.linear: pure_linear_mock,
     # torch.nn.modules.linear.Bilinear,
     # torch.nn.modules.linear.LazyLinear,
 }
