@@ -1,8 +1,8 @@
 import torch
 import torch.fx
 
-from .nn import activation, normalization, linear, conv, pooling, embedding, dropout
-
+from .nn import (activation, conv, dropout, embedding, linear, normalization,
+                 pooling)
 
 builtin_mocks = {
     **embedding.mock_dict,
@@ -24,7 +24,12 @@ def mock_with_fx_graph_manipulation(torch_module, extra_mocks={}):
     graph = torch.fx.Tracer().trace(torch_module)
     for node in graph.nodes:
         if node.op == "call_module":
-            target_module = model.get_submodule(node.target)
+            print('here')
+            print(node.target)
+            print(type(node.target))
+            print(isinstance(node.target, str))
+            assert (isinstance(node.target, str))
+            target_module = torch_module.get_submodule(node.target)
             if mock_dict.get(target_module.__class__) is not None:
                 node.target = mock_dict[target_module.__class__](target_module)
         elif node.op == "call_function":
