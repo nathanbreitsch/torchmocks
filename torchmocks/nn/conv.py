@@ -4,32 +4,31 @@ import torch
 class MockConvFunction(torch.autograd.Function):
     @staticmethod
     def forward(ctx, x, weight, bias, kernel_size, dilation, padding, stride):
-        batch_size, in_channels, in_height, in_width = x.shape
-        out_channels, in_channels, kernel_height, kernel_width = weight.shape
-        ctx.save_for_backward(x, weight, bias)
         ctx.save_for_backward(
             torch.IntTensor(tuple(x.shape)),
             torch.IntTensor(tuple(weight.shape)),
             torch.IntTensor(tuple(bias.shape)) if bias is not None else None,
         )
 
-        out_height = (
-            in_height
-            + 2 * padding[0]
-            - dilation[0] * (kernel_size[0] - 1)
-            - 1
-            + stride[0]
-        ) // stride[0]
+        batch_size = x.shape[0]
+        in_channels = x.shape[1]
+        out_channels = weight.shape[0]
+        spacial_shape = x.shape[2:]
+        spacial_dim = len(spacial_shape)
 
-        out_width = (
-            in_width
-            + 2 * padding[1]
-            - dilation[1] * (kernel_size[1] - 1)
-            - 1
-            + stride[1]
-        ) // stride[1]
-
-        return torch.zeros((batch_size, out_channels, out_height, out_width))
+        new_spacial_shape = [
+            (
+                spacial_shape[i]
+                + 2 * padding[i]
+                - dilation[i] * (kernel_size[i] - 1)
+                - 1
+                + stride[i]
+            )
+            // stride[i]
+            for i in range(spacial_dim)
+        ]
+        new_shape = tuple([batch_size, out_channels] + new_spacial_shape)
+        return torch.zeros(new_shape)
 
     @staticmethod
     def backward(ctx, grad_output):
@@ -77,9 +76,9 @@ class MockConvModule:
 
 
 mock_dict = {
-    # torch.nn.modules.conv.Conv1d,
+    torch.nn.modules.conv.Conv1d: MockConvModule,
     torch.nn.modules.conv.Conv2d: MockConvModule,
-    # torch.nn.modules.conv.Conv3d,
+    torch.nn.modules.conv.Conv3d: MockConvModule,
     # torch.nn.modules.conv.ConvTranspose1d,
     # torch.nn.modules.conv.ConvTranspose2d,
     # torch.nn.modules.conv.ConvTranspose3d,
