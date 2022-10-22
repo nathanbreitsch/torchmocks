@@ -1,54 +1,73 @@
 import torch
 
 
-def tupleize(d):
+class MockPoolFunction(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx, x, kernel_size, dilation, padding, stride):
+        ctx.save_for_backward(torch.IntTensor(tuple(x.shape)))
+
+        batch_size = x.shape[0]
+        in_channels = x.shape[1]
+        spacial_shape = x.shape[2:]
+        spacial_dim = len(spacial_shape)
+        out_channels = in_channels
+        new_spacial_shape = [
+            (
+                spacial_shape[i]
+                + 2 * padding[i]
+                - dilation[i] * (kernel_size[i] - 1)
+                - 1
+                + stride[i]
+            )
+            // stride[i]
+            for i in range(spacial_dim)
+        ]
+        new_shape = tuple([batch_size, out_channels] + new_spacial_shape)
+        return torch.zeros(new_shape)
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        x_shape = tuple(ctx.saved_tensors[0])
+        return torch.zeros(x_shape), None, None, None, None
+
+
+def tupleize(d, dim=2):
     if isinstance(d, int):
-        return (d, d)
+        return tuple([d] * dim)
     elif isinstance(d, tuple):
         return d
     else:
         raise ValueError
 
 
-class Pool2dMock:
+class MockPoolModule:
     def __init__(self, obj):
+        super().__init__()
         self.__class__ = type(
             obj.__class__.__name__, (self.__class__, obj.__class__), {}
         )
         self.__dict__ = obj.__dict__
         self.kernel_size = tupleize(obj.kernel_size)
-        self.stride = tupleize(obj.stride)
+        self.dilation = tupleize(getattr(obj, "dilation", 1))
         self.padding = tupleize(obj.padding)
-        self.dilation = tupleize(obj.dilation)
-        self.mock_gradient_sink = torch.ones(1, requires_grad=True)
+        self.stride = tupleize(obj.stride)
 
     def forward(self, x):
-        batch_size, in_channels, in_height, in_width = x.shape
-        out_height = (
-            in_height
-            + 2 * self.padding[0]
-            - self.dilation[0] * (self.kernel_size[0] - 1)
-            - 1
-            + self.stride[0]
-        ) // self.stride[0]
-        out_width = (
-            in_width
-            + 2 * self.padding[1]
-            - self.dilation[1] * (self.kernel_size[1] - 1)
-            - 1
-            + self.stride[1]
-        ) // self.stride[1]
-        return self.mock_gradient_sink * torch.zeros(
-            (batch_size, in_channels, out_height, out_width)
+        return MockPoolFunction.apply(
+            x,
+            self.kernel_size,
+            self.dilation,
+            self.padding,
+            self.stride,
         )
 
 
 mock_dict = {
     # torch.nn.modules.pooling.AvgPool1d,
-    torch.nn.modules.pooling.AvgPool2d: Pool2dMock,
+    torch.nn.modules.pooling.AvgPool2d: MockPoolModule,
     # torch.nn.modules.pooling.AvgPool3d,
     # torch.nn.modules.pooling.MaxPool1d,
-    torch.nn.modules.pooling.MaxPool2d: Pool2dMock,
+    torch.nn.modules.pooling.MaxPool2d: MockPoolModule,
     # torch.nn.modules.pooling.MaxPool3d,
     # torch.nn.modules.pooling.MaxUnpool1d,
     # torch.nn.modules.pooling.MaxUnpool2d,
