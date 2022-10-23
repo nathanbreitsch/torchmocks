@@ -35,6 +35,9 @@ def tupleize(d, dim=2):
     if isinstance(d, int):
         return tuple([d] * dim)
     elif isinstance(d, tuple):
+        if len(d) == 1:
+            return tupleize(d[0])
+        assert len(d) == dim
         return d
     else:
         raise ValueError
@@ -47,28 +50,29 @@ class MockPoolModule:
             obj.__class__.__name__, (self.__class__, obj.__class__), {}
         )
         self.__dict__ = obj.__dict__
-        self.kernel_size = tupleize(obj.kernel_size)
-        self.dilation = tupleize(getattr(obj, "dilation", 1))
-        self.padding = tupleize(obj.padding)
-        self.stride = tupleize(obj.stride)
+        self.kernel_size = obj.kernel_size
+        self.dilation = getattr(obj, "dilation", 1)
+        self.padding = obj.padding
+        self.stride = obj.stride
 
     def forward(self, x):
+        spacial_dim = len(x.shape) - 2
         return MockPoolFunction.apply(
             x,
-            self.kernel_size,
-            self.dilation,
-            self.padding,
-            self.stride,
+            tupleize(self.kernel_size, spacial_dim),
+            tupleize(self.dilation, spacial_dim),
+            tupleize(self.padding, spacial_dim),
+            tupleize(self.stride, spacial_dim),
         )
 
 
 mock_dict = {
-    # torch.nn.modules.pooling.AvgPool1d,
+    torch.nn.modules.pooling.AvgPool1d: MockPoolModule,
     torch.nn.modules.pooling.AvgPool2d: MockPoolModule,
-    # torch.nn.modules.pooling.AvgPool3d,
-    # torch.nn.modules.pooling.MaxPool1d,
+    torch.nn.modules.pooling.AvgPool3d: MockPoolModule,
+    torch.nn.modules.pooling.MaxPool1d: MockPoolModule,
     torch.nn.modules.pooling.MaxPool2d: MockPoolModule,
-    # torch.nn.modules.pooling.MaxPool3d,
+    torch.nn.modules.pooling.MaxPool3d: MockPoolModule,
     # torch.nn.modules.pooling.MaxUnpool1d,
     # torch.nn.modules.pooling.MaxUnpool2d,
     # torch.nn.modules.pooling.MaxUnpool3d,
