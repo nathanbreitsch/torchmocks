@@ -23,12 +23,12 @@ class MockPoolFunction(torch.autograd.Function):
             for i in range(spacial_dim)
         ]
         new_shape = tuple([batch_size, out_channels] + new_spacial_shape)
-        return torch.zeros(new_shape)
+        return torch.zeros(new_shape, device=x.device)
 
     @staticmethod
     def backward(ctx, grad_output):
         x_shape = tuple(ctx.saved_tensors[0])
-        return torch.zeros(x_shape), None, None, None, None
+        return torch.zeros(x_shape, device=grad_output.device), None, None, None, None
 
 
 def tupleize(d, dim=2):

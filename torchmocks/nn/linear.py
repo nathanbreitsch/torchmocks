@@ -12,7 +12,7 @@ class MockLinearFunction(torch.autograd.Function):
         out_features, in_features = weight.shape
         assert x.shape[-1] == in_features
         output_shape = (*x.shape[:-1], out_features)
-        output = torch.zeros(output_shape)
+        output = torch.zeros(output_shape, device=x.device)
         return output
 
     @staticmethod
@@ -24,11 +24,11 @@ class MockLinearFunction(torch.autograd.Function):
 
         grad_input = grad_weight = grad_bias = None
         if ctx.needs_input_grad[0]:
-            grad_input = torch.zeros(x_shape)
+            grad_input = torch.zeros(x_shape, device=grad_output.device)
         if ctx.needs_input_grad[1]:
-            grad_weight = torch.zeros(weight_shape)
+            grad_weight = torch.zeros(weight_shape, device=grad_output.device)
         if bias_shape is not None and ctx.needs_input_grad[2]:
-            grad_bias = torch.zeros(bias_shape)
+            grad_bias = torch.zeros(bias_shape, device=grad_output.device)
         return grad_input, grad_weight, grad_bias
 
 

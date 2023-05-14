@@ -12,7 +12,7 @@ class EmbeddingMock:
 
     def forward(self, x):
         new_shape = tuple(list(x.shape) + [self.embedding_dim])
-        return self.mock_gradient_sink * torch.zeros(new_shape)
+        return self.mock_gradient_sink * torch.zeros(new_shape, device=x.device)
 
 
 mock_dict = {
