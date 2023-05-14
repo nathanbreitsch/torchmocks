@@ -1,4 +1,4 @@
-import pytorch_lightning
+from lightning import pytorch as pytorch_lightning
 import torch
 import torchvision
 from torchmocks import mock
